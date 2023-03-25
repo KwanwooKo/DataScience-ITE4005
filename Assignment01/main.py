@@ -38,7 +38,7 @@ if __name__ == "__main__":
     while pruned_candidate:
         # candidate = generated from pruned_candidate
         candidate = self_join(pruned_candidate, idx)
-        frequent = compare_trxList_and_frequent(trxList, candidate)
+        frequent = compare_trxList_and_frequent(trxList, candidate, min_sup)
         frequent = prune_frequent_by_prevfrequent(frequent, list(pruned_candidate))
         pruned_candidate = make_pruned_candidate(frequent)
         # pruned_candidate = prune_frequent_by_candidate(
@@ -48,10 +48,10 @@ if __name__ == "__main__":
         frequents.append(frequent)
         idx += 1
 
-    print_frequents(frequents)
-    print_support(frequents)
+    # print_frequents(frequents)
+    # print_support(frequents)
 
-    make_association(frequents, output_fd)
+    make_association(frequents, output_fd, len(trxList))
 
     # 파일 close
     input_fd.close()

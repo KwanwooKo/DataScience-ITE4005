@@ -128,7 +128,7 @@ def compare_trx_and_itemSet(trx: list, itemSet: set):
     return findItemSet
 
 # frequents.append(ret) 이렇게 해줘야 함
-def compare_trxList_and_frequent(trxList: list[list], candidate: set):
+def compare_trxList_and_frequent(trxList: list[list], candidate: set, min_sup):
     ret = dict()
     for itemSet in candidate:
         count = 0
@@ -166,10 +166,13 @@ def prune_frequent_by_prevfrequent(frequent, prev_pruned_candidate: list):
             if len(tmp_list) == 2:
                 tmp_list.remove(element)
                 cmp_tuple = int(tmp_list[-1])
+            elif len(tmp_list) == 3:
+                tmp_list.remove(element)
+                cmp_tuple = tuple(sorted(tmp_list))
             else:
                 tmp_list.remove(element)
-                cmp_tuple = tuple(tmp_list)
-            if cmp_tuple not in prev_pruned_candidate and ret[itemset] is not None:
+                cmp_tuple = frozenset(sorted(tmp_list))
+            if cmp_tuple not in prev_pruned_candidate:
                 ret.pop(itemset)
                 break
             tmp_list = list_item_set.copy()
@@ -177,12 +180,12 @@ def prune_frequent_by_prevfrequent(frequent, prev_pruned_candidate: list):
 
 
 
-def make_association(frequents, output_fd):
+def make_association(frequents, output_fd, number_of_trxList):
     for i in range(len(frequents)):
         for j in range(len(frequents)):
             first_frequent = frequents[i]
             second_frequent = frequents[j]
-            print_sup_and_conf(frequents, first_frequent, second_frequent, output_fd)
+            print_sup_and_conf(frequents, first_frequent, second_frequent, output_fd, number_of_trxList)
 
 # helper function
 def file_write_by_line(output_fd, first_list, second_list, union_sup, confidence):
@@ -201,14 +204,15 @@ def file_write_by_line(output_fd, first_list, second_list, union_sup, confidence
         else:
             buffer += f"{second_list[i]}"
     buffer += "}\t"
-    buffer += f"{union_sup}\t"
+    buffer += f"{union_sup: .2f}\t"
     buffer += f"{confidence}\n"
     output_fd.write(buffer)
 
 # helper function
-def print_sup_and_conf(frequents, first_frequent, second_frequent, output_fd):
+def print_sup_and_conf(frequents, first_frequent, second_frequent, output_fd, number_of_trxList):
     for first_set in first_frequent:
         for second_set in second_frequent:
+            if first_set == second_set: continue
             # int, int
             if type(first_set) == int and type(second_set) == int:
                 first_list = [first_set]
@@ -217,14 +221,18 @@ def print_sup_and_conf(frequents, first_frequent, second_frequent, output_fd):
             elif type(first_set) != int and type(second_set) == int:
                 first_list = list(first_set)
                 second_list = [second_set]
+                if second_set in first_set: continue
             # int, set
             elif type(first_set) == int and type(second_set) != int:
                 first_list = [first_set]
                 second_list = list(second_set)
+                if first_set in second_set: continue
             # set, set
             elif type(first_set) != int and type(second_set) != int:
                 first_list = list(first_set)
                 second_list = list(second_set)
+                has_intersection = bool(set(first_list).intersection(second_list))
+                if has_intersection: continue
 
             union_set = (frozenset(first_list) | frozenset(second_list))
             union_index = len(union_set)  # frequents에 접근할 수 있는 index
@@ -237,14 +245,17 @@ def print_sup_and_conf(frequents, first_frequent, second_frequent, output_fd):
                 union_set = frozenset(union_set)
             # 합쳤을 때 index 초과되면
             if union_index >= len(frequents):
-                return
+                continue
             frequent = frequents[union_index]
             if union_set in frequent:
-                union_sup = frequent[union_set]
+                union_sup = round(frequent[union_set] / number_of_trxList * 100, 2)
+                union_sup_count = frequent[union_set]
             else:
-                return
+                continue
+            if union_sup < min_sup_count:
+                continue
             first_set_sup = first_frequent[first_set]
-            confidence = round(union_sup / first_set_sup * 100, 2)
+            confidence = round(union_sup_count / first_set_sup * 100, 2)
             # first_set의 값을 list 형태로 받아와야 함
 
             file_write_by_line(output_fd, first_list, second_list, union_sup, confidence)
