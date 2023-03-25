@@ -37,7 +37,23 @@ def print_items(items):
 
 def print_frequents(frequents):
     for frequent in frequents:
-        print(frequent)
+        for element in frequent:
+            if type(element) != int:
+                print("{", end=" ")
+                for i in element:
+                    print(i, end=", ")
+                print("}", end=", ")
+            else:
+                print("{", end=" ")
+                print(element, end=" ")
+                print("}", end=", ")
+        print()
+
+def print_support(frequents):
+    for frequent in frequents:
+        for element in frequent:
+            print(element, ": ", frequent[element], end=" / ")
+        print()
 
 #################### first set 만들기 ##############################
 # item 생성
@@ -77,8 +93,8 @@ def make_first_frequent(items, trx_list):
             for j in range(len(trx_list[i])):
                 if items[k] == trx_list[i][j]:
                     count += 1
-                if count >= min_sup:
-                    frequent[items[k]] = count
+        if count >= min_sup:
+            frequent[items[k]] = count
     return frequent
 #################### first set 만들기 ##############################
 
@@ -119,8 +135,8 @@ def compare_trxList_and_frequent(trxList: list[list], candidate: set):
         for trx in trxList:
             if compare_trx_and_itemSet(trx, itemSet) is True:
                 count += 1
-        ret[itemSet] = count
-    # print(f"ret = {ret}")
+        if count >= min_sup:
+            ret[itemSet] = count
     return ret
 
 # helper function, itemSet이 tuple이 아닐 수 있어
@@ -141,12 +157,97 @@ def make_pruned_candidate(frequent: dict):
     return pruned_candidate
 
 
+def prune_frequent_by_prevfrequent(frequent, prev_pruned_candidate: list):
+    ret = frequent.copy()
+    for itemset in frequent:
+        list_item_set = list(itemset)
+        tmp_list = list_item_set.copy()
+        for element in list_item_set:
+            if len(tmp_list) == 2:
+                tmp_list.remove(element)
+                cmp_tuple = int(tmp_list[-1])
+            else:
+                tmp_list.remove(element)
+                cmp_tuple = tuple(tmp_list)
+            if cmp_tuple not in prev_pruned_candidate and ret[itemset] is not None:
+                ret.pop(itemset)
+                break
+            tmp_list = list_item_set.copy()
+    return ret
 
 
 
+def make_association(frequents, output_fd):
+    for i in range(len(frequents)):
+        for j in range(len(frequents)):
+            first_frequent = frequents[i]
+            second_frequent = frequents[j]
+            print_sup_and_conf(frequents, first_frequent, second_frequent, output_fd)
 
+# helper function
+def file_write_by_line(output_fd, first_list, second_list, union_sup, confidence):
+    buffer = ""
+    buffer += "{"
+    for i in range(len(first_list)):
+        if i != len(first_list) - 1:
+            buffer += f"{first_list[i]},"
+        else:
+            buffer += f"{first_list[i]}"
+    buffer += "}\t"
+    buffer += "{"
+    for i in range(len(second_list)):
+        if i != len(second_list) - 1:
+            buffer += f"{second_list[i]},"
+        else:
+            buffer += f"{second_list[i]}"
+    buffer += "}\t"
+    buffer += f"{union_sup}\t"
+    buffer += f"{confidence}\n"
+    output_fd.write(buffer)
 
+# helper function
+def print_sup_and_conf(frequents, first_frequent, second_frequent, output_fd):
+    for first_set in first_frequent:
+        for second_set in second_frequent:
+            # int, int
+            if type(first_set) == int and type(second_set) == int:
+                first_list = [first_set]
+                second_list = [second_set]
+            # set, int
+            elif type(first_set) != int and type(second_set) == int:
+                first_list = list(first_set)
+                second_list = [second_set]
+            # int, set
+            elif type(first_set) == int and type(second_set) != int:
+                first_list = [first_set]
+                second_list = list(second_set)
+            # set, set
+            elif type(first_set) != int and type(second_set) != int:
+                first_list = list(first_set)
+                second_list = list(second_set)
 
+            union_set = (frozenset(first_list) | frozenset(second_list))
+            union_index = len(union_set)  # frequents에 접근할 수 있는 index
+            if len(union_set) == 1:
+                union_set = list(union_set)[-1]
+            elif len(union_set) == 2:
+                union_set = sorted(list(union_set))
+                union_set = tuple(union_set)
+            else:
+                union_set = frozenset(union_set)
+            # 합쳤을 때 index 초과되면
+            if union_index >= len(frequents):
+                return
+            frequent = frequents[union_index]
+            if union_set in frequent:
+                union_sup = frequent[union_set]
+            else:
+                return
+            first_set_sup = first_frequent[first_set]
+            confidence = round(union_sup / first_set_sup * 100, 2)
+            # first_set의 값을 list 형태로 받아와야 함
+
+            file_write_by_line(output_fd, first_list, second_list, union_sup, confidence)
 
 
 
