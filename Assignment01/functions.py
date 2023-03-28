@@ -1,9 +1,9 @@
 import sys
 import re
 
-min_sup_count = int(sys.argv[2])
-input_file_path = sys.argv[3]
-output_file_path = sys.argv[4]
+min_sup_count = int(sys.argv[1])
+input_file_path = sys.argv[2]
+output_file_path = sys.argv[3]
 min_sup = 0
 
 # input 이용해서 trx_list 만드는 함수
