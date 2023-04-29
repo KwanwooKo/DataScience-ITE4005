@@ -25,21 +25,15 @@ public class dt {
         File testFile = new File(args[1]);
         File resultFile = new File(args[2]);
 
-        FileReader fr = new FileReader(trainFile);
-        BufferedReader br = new BufferedReader(fr);
-        String buffer = br.readLine();
-
-        // 마지막 resultFile에 추가할 때 사용할 예정
-        String[] labels = buffer.split("\t");
-
-
         // 제일 먼저 root node에 대해서 해당 과정 진행
-        RootInformation rootInfo = new RootInformation(trainFile);
+        Information rootInfo = new RootInformation(trainFile);
         buildTree(rootInfo);
 
         // buildTree까지 완료
 
-
+        Result result = new Result(trainFile, testFile, resultFile, rootInfo);
+        // 이렇게 하면 알아서 적히게 끔
+        result.writeResult();
 
     }
 }

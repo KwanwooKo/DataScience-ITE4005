@@ -8,6 +8,7 @@ public class RootInformation implements Information{
     private boolean[] selectedFeature;
     private ArrayList<Information> child;
     private int numberOfChild;
+    private boolean isLeaf = false;
 
     public RootInformation(File trainFile) throws IOException {
         info = new ArrayList<>();
@@ -55,11 +56,28 @@ public class RootInformation implements Information{
 
     }
 
+    @Override
     public int getNumberOfChild() {
         return numberOfChild;
     }
 
+    @Override
     public ArrayList<Information> getChild() {
         return child;
+    }
+
+    @Override
+    public boolean getIsLeaf() {
+        return false;
+    }
+
+    @Override
+    public int getFeatureIndex() {
+        return featureIndex;
+    }
+
+    @Override
+    public ArrayList<String> getInfo() {
+        return info;
     }
 }

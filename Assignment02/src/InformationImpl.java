@@ -8,6 +8,7 @@ public class InformationImpl implements Information{
     private boolean[] selectedFeature;
     private ArrayList<Information> child;
     private int numberOfChild;
+    private boolean isLeaf; // isLeaf 이면 무조건 classification 진행
 
     public InformationImpl(ArrayList<String> info, boolean[] selectedFeature) {
         this.info = new ArrayList<>(info);
@@ -25,7 +26,10 @@ public class InformationImpl implements Information{
             int count = classLabel.getOrDefault(key, 0) + 1;
             classLabel.put(key, count);
         }
-        if (classLabel.size() == 1) return;
+        if (classLabel.size() == 1) {
+            isLeaf = true;
+            return;
+        }
 
 
         InformationGain ig = new InformationGain(info, selectedFeature);
@@ -55,13 +59,28 @@ public class InformationImpl implements Information{
         }
     }
 
+    @Override
     public int getNumberOfChild() {
         return numberOfChild;
     }
 
+    @Override
     public ArrayList<Information> getChild() {
         return child;
     }
 
+    @Override
+    public boolean getIsLeaf() {
+        return isLeaf;
+    }
 
+    @Override
+    public int getFeatureIndex() {
+        return featureIndex;
+    }
+
+    @Override
+    public ArrayList<String> getInfo() {
+        return info;
+    }
 }
